@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>과제 CRUD</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+  <link rel="stylesheet" href="my.css">
+  <style>
+    .form-group {
+      padding: 0;
+      margin: 0;
+    }
+    .task-card {
+      padding: 12px;
+      margin-bottom: 10px;
+      background-color: #faf3f3;
+      text-align: left;
+    }
+    .task-header {
+      font-weight: bold;
+      font-size: 16px;
+    }
+    .task-detail {
+      margin-top: 5px;
+      font-size: 14px;
+    }
+  </style>
+
+<script>
+  window.onload = function () {
+    document.getElementById("btnStu").addEventListener("click", getStudents);
+    document.getElementById("btnAdd").addEventListener("click", postData);
+  };
+
+
+  function getStudents() {
+    const xhr = new XMLHttpRequest();
+    xhr.onload = () => {
+      if (xhr.status === 200) {
+        const res = JSON.parse(xhr.response);
+        document.getElementById("itemList").innerHTML = makeList(res);
+      }
+    };
+    xhr.open("GET", "http://localhost:3001/tasks");
+    xhr.send();
+  }
+
+
+  function postData() {
+    const title = document.getElementById("title").value.trim();
+    const due = document.getElementById("due").value.trim();
+    const detail = document.getElementById("detail").value.trim();
+    const finish = document.getElementById("finish").value.trim();
+    const priority = document.getElementById("priority").value.trim();
+    const category = document.getElementById("category").value.trim();
+
+    if (!title || !due || !detail || !finish || !priority || !category) {
+      alert("모든 칸을 입력해야 합니다!");
+      return;
+    }
+
+    const data = { title, dueDay: due, detail, finish, priority, category };
+
+    const xhr = new XMLHttpRequest();
+    xhr.onload = () => {
+      if (xhr.status == 201) {
+        clearInputs();
+        getStudents();
+      }
+    };
+    xhr.open("POST", "http://localhost:3001/tasks");
+    xhr.setRequestHeader("Content-Type", "application/json; charset=UTF-8");
+    xhr.send(JSON.stringify(data));
+  }
+
+  function clearInputs() {
+    document.getElementById("title").value = "";
+    document.getElementById("due").value = "";
+    document.getElementById("detail").value = "";
+    document.getElementById("finish").value = "";
+    document.getElementById("priority").value = "";
+    document.getElementById("category").value = "";
+  }
+
+
+  function deleteData(id) {
+    const xhr = new XMLHttpRequest();
+    xhr.open("DELETE", "http://localhost:3001/tasks/" + id);
+    xhr.onload = () => {
+      if (xhr.status === 200 || xhr.status === 204) {
+        getStudents();
+      } else {
+        alert("삭제 실패: " + xhr.status);
+      }
+    };
+    xhr.send();
+  }
+
+
+  function updateData(id) {
+  const newTitle = prompt("새 제목을 입력하세요");
+  const newDue = prompt("새 마감일(YYYY-MM-DD)을 입력하세요");
+  const newDetail = prompt("새 내용(Detail)을 입력하세요");
+  const newFinish = prompt("완료 여부(Yes/No)를 입력하세요");
+  const newPriority = prompt("새 우선순위(Low/Medium/High)를 입력하세요");
+  const newCategory = prompt("새 카테고리를 입력하세요");
+
+  
+  const updateObj = {};
+  if (newTitle) updateObj.title = newTitle;
+  if (newDue) updateObj.dueDay = newDue;
+  if (newDetail) updateObj.detail = newDetail;
+  if (newFinish) updateObj.finish = newFinish;
+  if (newPriority) updateObj.priority = newPriority;
+  if (newCategory) updateObj.category = newCategory;
+
+  if (Object.keys(updateObj).length === 0) {
+    alert("변경할 값이 없습니다.");
+    return;
+  }
+
+  const xhr = new XMLHttpRequest();
+  xhr.onload = () => {
+    if (xhr.status === 200) {
+      alert("수정 완료!");
+      getStudents();
+    } else {
+      alert("수정 실패: " + xhr.status);
+    }
+  };
+  xhr.open("PATCH", "http://localhost:3001/tasks/" + id);
+  xhr.setRequestHeader("Content-Type", "application/json; charset=UTF-8");
+  xhr.send(JSON.stringify(updateObj));
+}
+
+
+  function makeList(data) {
+    let str = "";
+    for (let i = 0; i < data.length; i++) {
+      const t = data[i];
+      str += `
+        <div class="task-card">
+          <div class="task-header">${t.title}</div>
+          <div class="task-detail">마감일: ${t.dueDay}</div>
+          <div class="task-detail">내용: ${t.detail}</div>
+          <div class="task-detail">완료: ${t.finish}</div>
+          <div class="task-detail">우선순위: ${t.priority}</div>
+          <div class="task-detail">카테고리: ${t.category}</div>
+          <div style="margin-top:8px;">
+            <button class="btn btn-primary" onclick="updateData('${t.id}')">Modify</button>
+            <button class="btn btn-danger" onclick="deleteData('${t.id}')">Delete</button>
+          </div>
+        </div>`;
+    }
+    return str;
+  }
+</script>
+
+</head>
+
+<body>
+<nav class="navbar navbar-inverse">
+  <div class="container-fluid">
+    <div class="navbar-header">
+      <a class="navbar-brand" href="#">Logo</a>
+    </div>
+    <ul class="nav navbar-nav">
+      <li class="active"><a href="#">Home</a></li>
+      <li><a href="#">About</a></li>
+      <li><a href="#">Projects</a></li>
+      <li><a href="#">Contact</a></li>
+    </ul>
+  </div>
+</nav>
+
+<div class="container-fluid text-center">
+  <div class="row content">
+
+    <div class="col-sm-2 sidenav">
+      <div class="ph">취미</div>
+      <p><a href="#">좋아하는 책</a></p>
+      <p><a href="#">좋아하는 영화</a></p>
+      <p><a href="#">좋아하는 운동</a></p>
+      <div class="ph">과제</div>
+      <p><a href="#">동아리 과제</a></p>
+      <p><a href="#">수업 과제</a></p>
+      <p><a href="#">기타 해야할 일</a></p>
+    </div>
+
+    <div class="col-sm-8 text-left">
+      <h1>Welcome to CRUD Program</h1>
+      <hr>
+      <h3>[과제 목록]</h3>
+
+      <div class="form-group">
+        <label>Title</label>
+        <input type="text" id="title" placeholder="Enter Title">
+      </div>
+      <div class="form-group">
+        <label>Due Day</label>
+        <input type="date" id="due">
+      </div>
+      <div class="form-group">
+        <label>Detail</label>
+        <input type="text" id="detail" placeholder="Enter Detail">
+      </div>
+      <div class="form-group">
+        <label>Finish</label>
+        <select id="finish">
+          <option value="">Select</option>
+          <option value="Yes">Yes</option>
+          <option value="No">No</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Priority</label>
+        <select id="priority">
+          <option value="">Select</option>
+          <option value="Low">Low</option>
+          <option value="Medium">Medium</option>
+          <option value="High">High</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Category</label>
+        <input type="text" id="category" placeholder="Enter Category">
+      </div>
+
+      <button id="btnAdd" class="btn btn-success">Add</button>
+      <button id="btnStu" class="btn btn-primary">Bring data</button>
+
+      <div id="itemList" style="margin-top:20px;"></div>
+    </div>
+
+    <div class="col-sm-2 sidenav">
+      <div class="well"><p>ADS</p></div>
+      <div class="well"><p>ADS</p></div>
+    </div>
+
+  </div>
+</div>
+
+<footer class="container-fluid text-center">
+  <p>Footer Text</p>
+</footer>
+</body>
+</html>
